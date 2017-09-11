@@ -2,74 +2,16 @@
 from bs4 import BeautifulSoup
 from openpyxl import load_workbook, Workbook
 import os
-
+from datetime import datetime 
 import pyperclip
 import requests
+import api_google
 
-FILE_NAME = './listings.xlsx'
-SHEET_NAME = 'Listings'
-
-CATEGORIES = [
-    '#',
-    'address',
-    'unit',
-    'city',
-    'prov',
-    'postal',
-    'listPr',
-    'salesStatus',
-    'taxes',
-    'taxYear',
-    'lastStatus',
-    'unitType',
-    'unitType2',
-    'lockerNum',
-    'lockerLevel',
-    'lockerUnit',
-    'floorNum',
-    'unitNum',
-    'roomCount',
-    'bedroomCount',
-    'washroomCount',
-    'washroomTypes',
-    'crossSt',
-    'mlsNum',
-    'possessionDate',
-    'numKitchens',
-    'hasBasement',
-    'hasFireplace',
-    'heatType',
-    'approxAge',
-    'approxSqFeet',
-    'sqftSource',
-    'unitDirection',
-    'pets',
-    'locker',
-    'maintenance',
-    'airCon',
-    'taxesIncl',
-    'waterIncl',
-    'heatIncl',
-    'hydroIncl',
-    'cablTvIncl',
-    'centralAirCon',
-    'buildingInsurIncl',
-    'parkingIncl',
-    'balconyType',
-    'ensuiteLaundry',
-    'exterior',
-    'garage',
-    'parking',
-    'parkType',
-    'parkSpaces',
-    'totalParkSpots',
-    'parkSpotNum',
-    'parkPerMonth',
-    'parkLevel',
-    'commonElemIncl',
-    'textDescriptions'
-]
-
+from config import CATEGORIES, FILE_NAME, SHEET_NAME
+def updateDataWithExtraColumns(row, currRow): 
+    row.update({'#': currRow})
+    row.update({'dateAdded': datetime.now().strftime('%Y-%m-%d')})
+    return row
 
 def removeDuplicates(rowsToSave):
     seen = set()
@@ -124,8 +66,8 @@ def writeDataToExcel(rowsToSave, sheet):
         
         if listingAlreadyExists:
             continue
+        row = updateDataWithExtraColumns(row, currRow)
 
-        row.update({'#': currRow})
         i = 1
         for val in CATEGORIES:
             sheet.cell(row=currRow,column=i, value=row[val])
@@ -230,55 +172,60 @@ def extractTopLevelData(topLevelData):
     }
 
 
-url = raw_input('enter a site: \n')
-data = requests.get(url)
-html_content = data.text
-soup = BeautifulSoup(html_content, 'html.parser')
+def main(): 
+    url = raw_input('enter a site: \n')
+    data = requests.get(url)
+    html_content = data.text
+    soup = BeautifulSoup(html_content, 'html.parser')
 
-pyperclip.copy(soup.prettify())
+    pyperclip.copy(soup.prettify())
 
-high_level_listings = soup.html.find_all('div', attrs={'class': 'report-container'}) or []
+    high_level_listings = soup.html.find_all('div', attrs={'class': 'report-container'}) or []
 
-a_listings = soup.html.find_next_siblings('div', attrs={"class": "report-container"}) or []
-b_listings = soup.html.find_next_siblings('div', attrs={"class": "link-item"}) or []
+    a_listings = soup.html.find_next_siblings('div', attrs={"class": "report-container"}) or []
+    b_listings = soup.html.find_next_siblings('div', attrs={"class": "link-item"}) or []
 
-for l in a_listings:
-    b_listings.append(l)
+    for l in a_listings:
+        b_listings.append(l)
 
-for x in high_level_listings:
-    b_listings.append(x)
+    for x in high_level_listings:
+        b_listings.append(x)
 
-rowsToSave = []
-for data in b_listings: 
-    data = data.find('div', attrs={"class": "legacyBorder"})
+    rowsToSave = []
+    for data in b_listings: 
+        data = data.find('div', attrs={"class": "legacyBorder"})
 
-    if data is None: continue
+        if data is None: continue
 
-    # top level info
-    datasets = data.select('> .formgroup.formitem')
+        # top level info
+        datasets = data.select('> .formgroup.formitem')
 
-    topLevelData = datasets[0]
-    miscData = datasets[1]
-    specificData = datasets[2]
-    roomSizeData = datasets[5]
-    textData = datasets[7]
+        topLevelData = datasets[0]
+        miscData = datasets[1]
+        specificData = datasets[2]
+        roomSizeData = datasets[5]
+        textData = datasets[7]
 
 
-    dataToSave = {}
+        dataToSave = {}
 
-    topDataDict = extractTopLevelData(topLevelData)
-    miscDataDict = extractMiscData(miscData)
-    specificDataDict = extractSpecificData(specificData)
-    # roomSizeDict = extractRoomSizeData(roomSizeData)
-    textDataDict = extractTextData(textData)
+        topDataDict = extractTopLevelData(topLevelData)
+        miscDataDict = extractMiscData(miscData)
+        specificDataDict = extractSpecificData(specificData)
+        # roomSizeDict = extractRoomSizeData(roomSizeData)
+        textDataDict = extractTextData(textData)
 
-    dataToSave.update(topDataDict)
-    dataToSave.update(miscDataDict)
-    dataToSave.update(specificDataDict)
-    dataToSave.update(textDataDict)
+        dataToSave.update(topDataDict)
+        dataToSave.update(miscDataDict)
+        dataToSave.update(specificDataDict)
+        dataToSave.update(textDataDict)
 
-    rowsToSave.append(dataToSave)    
+        rowsToSave.append(dataToSave)    
 
-rowsToSave = removeDuplicates(rowsToSave)
-doExcelStuff(rowsToSave)
-    
+    rowsToSave = removeDuplicates(rowsToSave)
+    doExcelStuff(rowsToSave)
+    api_google.saveIntoGoogleDrive()
+        
+
+if __name__ == '__main__':
+    main()

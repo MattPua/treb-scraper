@@ -1,3 +1,5 @@
 env/
 listings.xlsx
 ~$listings.xlsx
+client_secret.json
+*.pyc

@@ -1,7 +1,12 @@
+
+# General 
+
+# Should allow saving to Google Drive or not
+ENABLE_CLOUD_SAVING = False
+
 FILE_NAME = 'listings.xlsx'
 FILE_MIME_TYPE='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 SHEET_NAME = 'Listings'
-
 CATEGORIES = [
     '#',
     'address',
@@ -10,8 +15,10 @@ CATEGORIES = [
     'prov',
     'postal',
     'listPr',
+    'estMonthlyMortgage',
     'salesStatus',
     'taxes',
+    'taxesPerMonth',
     'taxYear',
     'lastStatus',
     'unitType',
@@ -63,8 +70,17 @@ CATEGORIES = [
     'textDescriptions',
     'dateAdded'
 ]
+SHEET_MLS_INDEX_NUM = CATEGORIES.index('mlsNum') + 1
 
+
+# Google API Specific
 GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file'
 GOOGLE_CLIENT_SECRET_FILE = 'client_secret.json'
 GOOGLE_APPLICATION_NAME = 'Treb-Web-Scraper-Drive'
 GOOGLE_CREDENTIALS_FILE = GOOGLE_APPLICATION_NAME+'.json'
+
+
+# Mortgage Calculator Specific
+MORTGAGE_INTEREST_RATE=0.03
+MORTGAGE_LOAN_YEARS=30
+MORTGAGE_LOAN_MONTHS=None

@@ -6,14 +6,24 @@ from datetime import datetime
 import pyperclip
 import requests
 import api_google
+from mortgage import Mortgage
 
-from config import CATEGORIES, FILE_NAME, SHEET_NAME
-def updateDataWithExtraColumns(row, currRow): 
+from config import CATEGORIES, FILE_NAME, SHEET_NAME, SHEET_MLS_INDEX_NUM, MORTGAGE_INTEREST_RATE, MORTGAGE_LOAN_YEARS, ENABLE_CLOUD_SAVING
+
+def strip_number(num):
+    return round(float(num.replace('$', '').replace(',','')) / 12, 2)
+
+def update_data_with_extra_columns(row, currRow): 
+    taxesPerMonth = strip_number(row['taxes'])
+    listPrice = strip_number(row['listPr'])
+    mortgageMonthly = Mortgage(float(MORTGAGE_INTEREST_RATE) / 100, MORTGAGE_LOAN_YEARS * 12, listPrice)
     row.update({'#': currRow})
     row.update({'dateAdded': datetime.now().strftime('%Y-%m-%d')})
+    row.update({'taxesPerMonth': taxesPerMonth})
+    row.update({'estMonthlyMortgage': mortgageMonthly.monthly_payment()})
     return row
 
-def removeDuplicates(rowsToSave):
+def remove_duplicates(rowsToSave):
     seen = set()
     new_l = []
     for d in rowsToSave:
@@ -23,12 +33,12 @@ def removeDuplicates(rowsToSave):
             new_l.append(d) 
     return new_l
 
-def createHeadersForSheet(sheet):
+def create_headers_for_sheet(sheet):
     for index, elem in enumerate(CATEGORIES):
         sheet.cell(row=1,column=index+1).value=elem
     return sheet
 
-def getExcelFile():
+def get_excel_file():
     if os.path.isfile(FILE_NAME):
         print 'retrieving existing file'
         wb = load_workbook(FILE_NAME)
@@ -40,16 +50,16 @@ def getExcelFile():
         return wb
 
 
-def getExcelSheet(wb):
+def get_excel_sheet(wb):
     sheets = wb.sheetnames
     if SHEET_NAME not in sheets:
         print SHEET_NAME + ' sheet not found. Creating new sheet...'
         sheet = wb.create_sheet(SHEET_NAME, 0)
-        createHeadersForSheet(sheet)
+        create_headers_for_sheet(sheet)
         wb.save(FILE_NAME)
     return wb.get_sheet_by_name(SHEET_NAME)
 
-def writeDataToExcel(rowsToSave, sheet): 
+def write_data_to_excel(rowsToSave, sheet): 
     rowToStart = sheet.max_row + 1
     # TODO: Check if exists
     print 'Saving data...'
@@ -59,14 +69,14 @@ def writeDataToExcel(rowsToSave, sheet):
         # Check if MLS number already exists
         listingAlreadyExists = False
         for currRowCheck in range(2, rowToStart):
-            if sheet.cell(row=currRowCheck, column=24).value == row['mlsNum']:
+            if sheet.cell(row=currRowCheck, column=SHEET_MLS_INDEX_NUM).value == row['mlsNum']:
                 print 'Listing ' + str(row['mlsNum']) + ' already exists. Skipping...'
                 listingAlreadyExists = True
                 break
         
         if listingAlreadyExists:
             continue
-        row = updateDataWithExtraColumns(row, currRow)
+        row = update_data_with_extra_columns(row, currRow)
 
         i = 1
         for val in CATEGORIES:
@@ -75,14 +85,15 @@ def writeDataToExcel(rowsToSave, sheet):
         currRow+=1
         listingsAdded+=1
     print str(listingsAdded) + ' new listings added...'
-    return
+    return listingsAdded
     
 
-def doExcelStuff(data):
-    wb = getExcelFile()
-    sheet = getExcelSheet(wb)
-    writeDataToExcel(data, sheet)
+def do_excel_stuff(data):
+    wb = get_excel_file()
+    sheet = get_excel_sheet(wb)
+    listingAdded = write_data_to_excel(data, sheet)
     wb.save(FILE_NAME)
+    return listingAdded
 
 def extractTextData(textData):
     av = textData.select('span.value')
@@ -172,7 +183,16 @@ def extractTopLevelData(topLevelData):
     }
 
 
+def print_app_mode():
+    if ENABLE_CLOUD_SAVING:
+        print 'Google Drive Saving Enabled.'
+    else:
+        print 'Local Saving Enabled.'
+
 def main(): 
+    print_app_mode()
+    if ENABLE_CLOUD_SAVING:
+        file_resource = api_google.get_latest_file_from_drive()
     url = raw_input('enter a site: \n')
     data = requests.get(url)
     html_content = data.text
@@ -222,9 +242,10 @@ def main():
 
         rowsToSave.append(dataToSave)    
 
-    rowsToSave = removeDuplicates(rowsToSave)
-    doExcelStuff(rowsToSave)
-    api_google.saveIntoGoogleDrive()
+    rowsToSave = remove_duplicates(rowsToSave)
+    listingAdded = do_excel_stuff(rowsToSave)
+    if listingAdded and ENABLE_CLOUD_SAVING:
+        api_google.saveIntoGoogleDrive(file_resource)
         
 
 if __name__ == '__main__':

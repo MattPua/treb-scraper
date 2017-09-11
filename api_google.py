@@ -110,8 +110,32 @@ def get_credentials():
     return credentials
 
 
+"""
+    downloads the latest file for the file from Google Drive if exists.
+    If found, returns the file object, else None
+"""
+def get_latest_file_from_drive():
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    service = discovery.build('drive', 'v3', http=http)
+
+    results = service.files().list().execute()
+    items = results.get('files', [])
+    if not items:
+        print('No existing files found.')
+        return None
+    else:
+        print('Found some files. Checking if ' + FILE_NAME + ' exists...')
+        match = next((l for l in items if l['name'] == FILE_NAME), None)
+        if match:
+            print('Found existing file. Downloading file')
+            download_file(service, match['id'])
+            return match
+        else:
+            print 'Could not find ' + FILE_NAME + '.'
+            return None
     
-def saveIntoGoogleDrive():
+def saveIntoGoogleDrive(file_object):
     """Shows basic usage of the Google Drive API.
 
     Creates a Google Drive API service object and outputs the names and IDs
@@ -122,19 +146,12 @@ def saveIntoGoogleDrive():
 
     results = service.files().list().execute()
     items = results.get('files', [])
-    if not items:
+    if not file_object:
         print('No files found. Creating new excel sheet called ' + FILE_NAME)
         insert_file(service, FILE_NAME,FILE_MIME_TYPE)
     else:
-        print('Found some files. Checking if ' + FILE_NAME + ' exists...')
-        match = next((l for l in items if l['name'] == FILE_NAME), None)
-        if match:
-            print('Found existing file. Retrieving file for update...')
-            # download_file(service, match['id'])
-            update_file(service, match['id'], match['mimeType'], match['name'])
-        else:
-            print 'Could not find ' + FILE_NAME + '. Creating file...'
-            insert_file(service, FILE_NAME, '')
+        print('Updating existing file on Drive.')
+        update_file(service, file_object['id'], file_object['mimeType'], file_object['name'])
 
 if __name__ == '__main__':
-    saveIntoGoogleDrive()
+    get_latest_file_from_drive()

@@ -14,9 +14,12 @@ CATEGORIES = [
     'city',
     'prov',
     'postal',
-    'listPr',
-    'estMonthlyMortgage',
     'salesStatus',
+    'listPr',
+    'downPayment',
+    'mortgageAmt',
+    'estMonthlyMortgage',
+    'maintenance',
     'taxes',
     'taxesPerMonth',
     'taxYear',
@@ -45,7 +48,6 @@ CATEGORIES = [
     'unitDirection',
     'pets',
     'locker',
-    'maintenance',
     'airCon',
     'taxesIncl',
     'waterIncl',
@@ -81,6 +83,7 @@ GOOGLE_CREDENTIALS_FILE = GOOGLE_APPLICATION_NAME+'.json'
 
 
 # Mortgage Calculator Specific
-MORTGAGE_INTEREST_RATE=0.03
-MORTGAGE_LOAN_YEARS=30
+MORTGAGE_INTEREST_RATE=2.99
+MORTGAGE_LOAN_YEARS=25
 MORTGAGE_LOAN_MONTHS=None
+MORTGAGE_DOWNPAYMENT_PERCENTAGE=20

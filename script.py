@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+from __future__ import division
 from bs4 import BeautifulSoup
 from openpyxl import load_workbook, Workbook
 import os
@@ -8,19 +9,24 @@ import requests
 import api_google
 from mortgage import Mortgage
 
-from config import CATEGORIES, FILE_NAME, SHEET_NAME, SHEET_MLS_INDEX_NUM, MORTGAGE_INTEREST_RATE, MORTGAGE_LOAN_YEARS, ENABLE_CLOUD_SAVING
+from config import CATEGORIES, FILE_NAME, SHEET_NAME, SHEET_MLS_INDEX_NUM, MORTGAGE_INTEREST_RATE, MORTGAGE_LOAN_YEARS, ENABLE_CLOUD_SAVING, MORTGAGE_DOWNPAYMENT_PERCENTAGE
 
 def strip_number(num):
-    return round(float(num.replace('$', '').replace(',','')) / 12, 2)
+    return round(float(num.replace('$', '').replace(',','')), 2)
 
 def update_data_with_extra_columns(row, currRow): 
     taxesPerMonth = strip_number(row['taxes'])
     listPrice = strip_number(row['listPr'])
-    mortgageMonthly = Mortgage(float(MORTGAGE_INTEREST_RATE) / 100, MORTGAGE_LOAN_YEARS * 12, listPrice)
+    mortgageAmount = listPrice * (1 - (MORTGAGE_DOWNPAYMENT_PERCENTAGE/100))
+    downpayment = listPrice * MORTGAGE_DOWNPAYMENT_PERCENTAGE / 100
+    mortgageMonthly = Mortgage(float(MORTGAGE_INTEREST_RATE) / 100, MORTGAGE_LOAN_YEARS * 12, mortgageAmount)
+
     row.update({'#': currRow})
     row.update({'dateAdded': datetime.now().strftime('%Y-%m-%d')})
-    row.update({'taxesPerMonth': taxesPerMonth})
+    row.update({'taxesPerMonth': round(taxesPerMonth/12,2)})
     row.update({'estMonthlyMortgage': mortgageMonthly.monthly_payment()})
+    row.update({'downPayment': round(downpayment, 2)})
+    row.update({'mortgageAmt': round(mortgageAmount, 2)})
     return row
 
 def remove_duplicates(rowsToSave):

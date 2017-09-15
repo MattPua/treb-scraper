@@ -9,7 +9,7 @@ import requests
 import api_google
 from mortgage import Mortgage
 
-from config import CATEGORIES, FILE_NAME, SHEET_NAME, SHEET_MLS_INDEX_NUM, MORTGAGE_INTEREST_RATE, MORTGAGE_LOAN_YEARS, ENABLE_CLOUD_SAVING, MORTGAGE_DOWNPAYMENT_PERCENTAGE
+from config import CATEGORIES, FILE_NAME, SHEET_NAME, SHEET_MLS_INDEX_NUM, MORTGAGE_INTEREST_RATE, MORTGAGE_LOAN_YEARS, ENABLE_CLOUD_SAVING, MORTGAGE_DOWNPAYMENT_PERCENTAGE, IS_CLOUD_SOURCE_OF_TRUE
 
 def strip_number(num):
     return round(float(num.replace('$', '').replace(',','')), 2)
@@ -190,10 +190,16 @@ def extractTopLevelData(topLevelData):
 
 
 def print_app_mode():
+    print '-------SETTINGS------'
     if ENABLE_CLOUD_SAVING:
-        print 'Google Drive Saving Enabled.'
+        print '[Settings] Google Drive Saving Enabled.'
+        if IS_CLOUD_SOURCE_OF_TRUE:
+            print '[Settings] Cloud files are source of truth'
+        else:
+            print '[Settings] Local File is source of truth.'
     else:
-        print 'Local Saving Enabled.'
+        print '[Settings] Local Saving Enabled.'
+    print '------END OF SETTINGS------'
 
 def main(): 
     print_app_mode()

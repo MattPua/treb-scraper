@@ -1,9 +1,17 @@
 
 # General 
 
-# Should allow saving to Google Drive or not
-ENABLE_CLOUD_SAVING = False
+# Server
+SERVER_PORT = 8080
+SERVER_HOST = '0.0.0.0'
 
+# Should allow saving to Google Drive or not
+ENABLE_CLOUD_SAVING = True
+
+# Whether or not we should let the file on the Cloud be the Source of Truth for the file
+IS_CLOUD_SOURCE_OF_TRUE = False
+
+# Application
 FILE_NAME = 'listings.xlsx'
 FILE_MIME_TYPE='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 SHEET_NAME = 'Listings'

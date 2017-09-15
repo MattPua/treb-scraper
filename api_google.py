@@ -6,7 +6,7 @@ from apiclient import discovery, http, errors
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
-from config import GOOGLE_CLIENT_SECRET_FILE, GOOGLE_SCOPES, GOOGLE_APPLICATION_NAME, GOOGLE_CREDENTIALS_FILE, FILE_NAME, SHEET_NAME, FILE_MIME_TYPE
+from config import GOOGLE_CLIENT_SECRET_FILE, GOOGLE_SCOPES, GOOGLE_APPLICATION_NAME, GOOGLE_CREDENTIALS_FILE, FILE_NAME, SHEET_NAME, FILE_MIME_TYPE, IS_CLOUD_SOURCE_OF_TRUE
 from apiclient import errors
 from apiclient.http import MediaFileUpload, MediaIoBaseDownload
 
@@ -128,8 +128,9 @@ def get_latest_file_from_drive():
         print('Found some files. Checking if ' + FILE_NAME + ' exists...')
         match = next((l for l in items if l['name'] == FILE_NAME), None)
         if match:
-            print('Found existing file. Downloading file')
-            download_file(service, match['id'])
+            if IS_CLOUD_SOURCE_OF_TRUE:
+                print('Found existing file. Downloading file')
+                download_file(service, match['id'])
             return match
         else:
             print 'Could not find ' + FILE_NAME + '.'

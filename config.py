@@ -9,7 +9,7 @@ SERVER_HOST = '0.0.0.0'
 ENABLE_CLOUD_SAVING = True
 
 # Whether or not we should let the file on the Cloud be the Source of Truth for the file
-IS_CLOUD_SOURCE_OF_TRUE = False
+IS_CLOUD_SOURCE_OF_TRUE = True
 
 # Application
 FILE_NAME = 'listings.xlsx'

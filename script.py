@@ -201,11 +201,11 @@ def print_app_mode():
         print '[Settings] Local Saving Enabled.'
     print '------END OF SETTINGS------'
 
-def main(): 
+def parse_listing(suppliedUrl): 
     print_app_mode()
     if ENABLE_CLOUD_SAVING:
         file_resource = api_google.get_latest_file_from_drive()
-    url = raw_input('enter a site: \n')
+    url = suppliedUrl if suppliedUrl is not None else raw_input('enter a site: \n')
     data = requests.get(url)
     html_content = data.text
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -258,7 +258,8 @@ def main():
     listingAdded = do_excel_stuff(rowsToSave)
     if listingAdded and ENABLE_CLOUD_SAVING:
         api_google.saveIntoGoogleDrive(file_resource)
+    print 'Finished updating file'
         
 
 if __name__ == '__main__':
-    main()
+    parse_listing(None)
